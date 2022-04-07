@@ -121,7 +121,6 @@ const getAllReservations = function (guest_id, limit = 10) {
 			if (!result.rows) {
 				return null;
 			}
-			console.log(result.rows);
 			return result.rows;
 		})
 		.catch(err => {
@@ -139,7 +138,6 @@ exports.getAllReservations = getAllReservations;
  * @return {Promise<[{}]>}  A promise to the properties.
  */
 const getAllProperties = function (options, limit = 10) {
-	console.log(options);
 	// 1
 	const queryParams = [];
 	// 2
@@ -175,21 +173,21 @@ const getAllProperties = function (options, limit = 10) {
 						queryParams.length
 				  }`;
 	}
-	
+
 	if (options.minimum_price_per_night && !options.maximum_price_per_night) {
 		queryParams.push(options.minimum_price_per_night * 100);
 		queryString +=
 			queryParams.length > 1
-			? `AND cost_per_night >= $${queryParams.length}`
-			: `WHERE cost_per_night >= $${queryParams.length}`
+				? `AND cost_per_night >= $${queryParams.length}`
+				: `WHERE cost_per_night >= $${queryParams.length}`;
 	}
 
 	if (!options.minimum_price_per_night && options.maximum_price_per_night) {
 		queryParams.push(options.maximum_price_per_night * 100);
 		queryString +=
 			queryParams.length > 1
-			? `AND cost_per_night <= $${queryParams.length}`
-			: `WHERE cost_per_night <= $${queryParams.length}`
+				? `AND cost_per_night <= $${queryParams.length}`
+				: `WHERE cost_per_night <= $${queryParams.length}`;
 	}
 
 	// 4
@@ -211,9 +209,6 @@ const getAllProperties = function (options, limit = 10) {
 	`;
 
 	// 5
-	console.log(queryString, queryParams);
-
-	// 6
 	return pool.query(queryString, queryParams).then(res => res.rows);
 };
 exports.getAllProperties = getAllProperties;
@@ -224,9 +219,34 @@ exports.getAllProperties = getAllProperties;
  * @return {Promise<{}>} A promise to the property.
  */
 const addProperty = function (property) {
-	const propertyId = Object.keys(properties).length + 1;
-	property.id = propertyId;
-	properties[propertyId] = property;
-	return Promise.resolve(property);
+	const keys = Object.values(property);
+
+	return pool
+		.query(
+			`
+		INSERT INTO properties (
+			title,
+			description,
+			number_of_bedrooms,
+			number_of_bathrooms,
+			parking_spaces,
+			cost_per_night,
+			thumbnail_photo_url,
+			cover_photo_url,
+			street,
+			country,
+			city,
+			province,
+			post_code,
+			owner_id
+		)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+		RETURNING *;
+	`,
+			keys
+		)
+		.then(result => {
+			return result.rows;
+		});
 };
 exports.addProperty = addProperty;
